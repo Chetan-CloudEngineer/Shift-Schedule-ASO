@@ -76,6 +76,18 @@
         }
         .filter-btn:hover { background: rgba(0,212,255,0.2); }
 
+        .year-input {
+            max-width: 90px;
+            text-align: center;
+            font-weight: 700;
+            background: rgba(0,212,255,0.1);
+            border: 2px solid rgba(0,212,255,0.4);
+            color: #00d4ff;
+            padding: 6px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+        }
+
         .main-container {
             flex: 1;
             overflow: auto;
@@ -88,14 +100,15 @@
         .schedule-grid {
             display: grid;
             grid-template-columns: 70px repeat(31, 1fr);
-            gap: 2px;
+            gap: 3px;
             min-width: 100%;
-            font-size: 0.7em;
+            font-size: 0.8em;
+            align-items: stretch;
         }
 
         .person-name {
             background: linear-gradient(135deg, rgba(0,212,255,0.3), rgba(0,212,255,0.1));
-            padding: 6px 4px;
+            padding: 12px 6px;
             font-weight: 900;
             color: #00ffff;
             text-align: left;
@@ -107,16 +120,17 @@
             display: flex;
             align-items: center;
             text-shadow: 0 0 12px rgba(0,212,255,0.8), 0 0 6px rgba(0,255,255,0.6);
-            font-size: 0.85em;
+            font-size: 0.95em;
+            min-height: 55px;
         }
 
         .date-header {
             background: rgba(0,255,127,0.15);
-            padding: 4px 2px;
+            padding: 6px 4px;
             text-align: center;
             font-weight: 900;
             color: #00ff88;
-            font-size: 0.7em;
+            font-size: 0.75em;
             border-radius: 3px;
             writing-mode: vertical-rl;
             transform: rotate(180deg);
@@ -124,16 +138,16 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 25px;
+            min-height: 55px;
             text-shadow: 0 0 10px rgba(0,255,127,0.8);
         }
 
         .shift-cell {
-            padding: 3px 2px;
+            padding: 8px 4px;
             text-align: center;
-            border-radius: 3px;
-            font-size: 0.7em;
-            min-height: 20px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            min-height: 55px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -145,7 +159,7 @@
         }
 
         .shift-cell:hover { 
-            box-shadow: 0 0 12px rgba(0,212,255,0.8), inset 0 0 5px rgba(255,255,255,0.1);
+            box-shadow: 0 0 14px rgba(0,212,255,0.9), inset 0 0 6px rgba(255,255,255,0.15);
             transform: scale(1.08);
             z-index: 10;
         }
@@ -371,8 +385,8 @@
 
         @media (max-width: 1920px) {
             .schedule-grid { grid-template-columns: 65px repeat(31, 1fr); }
-            .shift-cell { font-size: 0.65em; }
-            .date-header { font-size: 0.65em; }
+            .shift-cell { font-size: 0.85em; }
+            .date-header { font-size: 0.7em; }
         }
     </style>
 </head>
@@ -380,10 +394,27 @@
     <div class="wrapper">
         <div class="header">
             <h1>🖧 Network Team Shift scheduled-ASO</h1>
-            <div class="subtitle">Real-Time Shift Management • January 2026 • IST Timezone</div>
+            <div class="subtitle" id="subtitleText">Real-Time Shift Management • January 2026 • IST Timezone</div>
         </div>
 
         <div class="controls">
+            <select id="monthSelect" class="filter-btn" onchange="changeMonthYear()">
+                <option value="0">Jan</option>
+                <option value="1">Feb</option>
+                <option value="2">Mar</option>
+                <option value="3">Apr</option>
+                <option value="4">May</option>
+                <option value="5">Jun</option>
+                <option value="6">Jul</option>
+                <option value="7">Aug</option>
+                <option value="8">Sep</option>
+                <option value="9">Oct</option>
+                <option value="10">Nov</option>
+                <option value="11">Dec</option>
+            </select>
+
+            <input id="yearInput" class="year-input" type="number" value="2026" onchange="changeMonthYear()">
+
             <input type="text" id="searchInput" class="search-box" placeholder="🔍 Search: Name / Day / Date / Time...">
             <button class="filter-btn active" onclick="filterShifts('all')">📅 All</button>
             <button class="filter-btn" onclick="filterShifts('weekday')">📍 Weekdays</button>
@@ -550,7 +581,29 @@
             "LEAVE": "OFF"
         };
 
-        const weekends = ["03-Jan", "04-Jan", "10-Jan", "11-Jan", "17-Jan", "18-Jan", "24-Jan", "25-Jan", "31-Jan"];
+        let currentMonth = 0;   // 0 = Jan
+        let currentYear = 2026;
+
+        function getDaysInMonth(year, monthIndex) {
+            return new Date(year, monthIndex + 1, 0).getDate();
+        }
+
+        function getWeekendKeys(year, monthIndex) {
+            const weekendsArr = [];
+            const daysInMonth = getDaysInMonth(year, monthIndex);
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dateObj = new Date(year, monthIndex, d);
+                const dayNum = dateObj.getDay(); // 0 Sun, 6 Sat
+                if (dayNum === 0 || dayNum === 6) {
+                    const dateStr = String(d).padStart(2, '0');
+                    const monthShort = dateObj.toLocaleString('en-US', { month: 'short' });
+                    weekendsArr.push(`${dateStr}-${monthShort}`);
+                }
+            }
+            return weekendsArr;
+        }
+
+        let weekends = getWeekendKeys(currentYear, currentMonth);
         let currentFilter = 'all';
         let selectedCell = null;
 
@@ -565,16 +618,28 @@
             return "off";
         }
 
+        function updateSubtitle() {
+            const monthName = new Date(currentYear, currentMonth, 1).toLocaleString('en-US', { month: 'long' });
+            document.getElementById('subtitleText').textContent =
+                `Real-Time Shift Management • ${monthName} ${currentYear} • IST Timezone`;
+        }
+
         function buildGrid() {
             const grid = document.getElementById('scheduleGrid');
             grid.innerHTML = '';
             const emptyHeader = document.createElement('div');
             grid.appendChild(emptyHeader);
 
-            for (let day = 1; day <= 31; day++) {
+            const daysInMonth = getDaysInMonth(currentYear, currentMonth);
+            const monthShort = new Date(currentYear, currentMonth, 1)
+                .toLocaleString('en-US', { month: 'short' });
+
+            document.getElementById('daysCount').textContent = daysInMonth;
+
+            for (let day = 1; day <= daysInMonth; day++) {
                 const dateStr = String(day).padStart(2, '0');
-                const dateKey = `${dateStr}-Jan`;
-                const dayNum = new Date(2026, 0, day).getDay();
+                const dateKey = `${dateStr}-${monthShort}`;
+                const dayNum = new Date(currentYear, currentMonth, day).getDay();
                 const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
                 const header = document.createElement('div');
                 header.className = `date-header ${weekends.includes(dateKey) ? 'weekend' : ''}`;
@@ -588,9 +653,13 @@
                 nameCell.textContent = person;
                 grid.appendChild(nameCell);
 
-                for (let day = 1; day <= 31; day++) {
+                const daysInMonthLocal = getDaysInMonth(currentYear, currentMonth);
+                const monthShortLocal = new Date(currentYear, currentMonth, 1)
+                    .toLocaleString('en-US', { month: 'short' });
+
+                for (let day = 1; day <= daysInMonthLocal; day++) {
                     const dateStr = String(day).padStart(2, '0');
-                    const dateKey = `${dateStr}-Jan`;
+                    const dateKey = `${dateStr}-${monthShortLocal}`;
                     const isWeekend = weekends.includes(dateKey);
                     const cell = document.createElement('div');
                     cell.className = `shift-cell ${isWeekend ? 'weekend' : ''}`;
@@ -600,7 +669,8 @@
                     cell.textContent = time || '';
                     cell.dataset.person = person;
                     cell.dataset.date = dateKey;
-                    cell.dataset.day = new Date(2026, 0, day).toLocaleDateString('en-US', {weekday: 'long'});
+                    cell.dataset.day = new Date(currentYear, currentMonth, day)
+                        .toLocaleDateString('en-US', { weekday: 'long' });
                     cell.dataset.time = time || 'OFF';
                     cell.onclick = () => openModal(person, dateKey, cell.dataset.day, time);
                     grid.appendChild(cell);
@@ -628,6 +698,7 @@
             const newStatus = document.getElementById('updateShiftSelect').value;
             if (!newStatus || !selectedCell) return;
             
+            schedule[selectedCell.date] = schedule[selectedCell.date] || {};
             schedule[selectedCell.date][selectedCell.person] = newStatus === 'LEAVE' ? 'LEAVE' : newStatus;
             buildGrid();
             closeModal();
@@ -662,11 +733,24 @@
             });
         }
 
+        function changeMonthYear() {
+            const monthSel = document.getElementById('monthSelect');
+            const yearInp = document.getElementById('yearInput');
+            currentMonth = parseInt(monthSel.value, 10);
+            currentYear = parseInt(yearInp.value, 10) || currentYear;
+            weekends = getWeekendKeys(currentYear, currentMonth);
+            updateSubtitle();
+            buildGrid();
+        }
+
         document.getElementById('shiftModal').addEventListener('click', (e) => {
             if (e.target.id === 'shiftModal') closeModal();
         });
 
-        window.addEventListener('DOMContentLoaded', buildGrid);
+        window.addEventListener('DOMContentLoaded', () => {
+            updateSubtitle();
+            buildGrid();
+        });
     </script>
 </body>
 </html>
