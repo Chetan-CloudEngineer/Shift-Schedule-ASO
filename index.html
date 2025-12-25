@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🖧 Network Team Shift scheduled-ASO</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75'>🖧</text></svg>">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; }
+        body { 
+            font-family: 'Segoe UI', 'Courier New', monospace; 
+            background: linear-gradient(135deg, #0a0a14 0%, #1a1a2e 100%);
+            color: #e0e0e0;
+            overflow: hidden;
+            padding: 8px;
+        }
+
+        .wrapper { display: flex; flex-direction: column; height: 100vh; }
+        
+        .header { 
+            text-align: center; 
+            margin-bottom: 8px;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, rgba(0,212,255,0.1), rgba(0,255,127,0.1));
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(0,212,255,0.3);
+        }
+        h1 { 
+            color: #00d4ff; 
+            font-size: 1.6em; 
+            text-shadow: 0 0 20px #00d4ff, 0 0 40px rgba(0,212,255,0.5);
+            margin-bottom: 3px;
+            font-weight: bold;
+        }
+        .subtitle { color: #00ff88; font-size: 0.85em; text-shadow: 0 0 10px #00ff88; }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+            flex-shrink: 0;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+            background: rgba(0,212,255,0.1);
+            border: 2px solid rgba(0,212,255,0.4);
+            color: #00d4ff;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        .search-box::placeholder { color: #606060; }
+        .search-box:focus { outline: none; box-shadow: 0 0 15px rgba(0,212,255,0.6); }
+
+        .filter-btn {
+            background: rgba(0,212,255,0.1);
+            border: 1px solid rgba(0,212,255,0.4);
+            color: #00d4ff;
+            padding: 6px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.8em;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .filter-btn.active { 
+            background: rgba(0,212,255,0.3);
+            box-shadow: 0 0 10px rgba(0,212,255,0.6);
+        }
+        .filter-btn:hover { background: rgba(0,212,255,0.2); }
+
+        .main-container {
+            flex: 1;
+            overflow: auto;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(0,212,255,0.2);
+            border-radius: 8px;
+            padding: 8px;
+        }
+
+        .schedule-grid {
+            display: grid;
+            grid-template-columns: 70px repeat(31, 1fr);
+            gap: 2px;
+            min-width: 100%;
+            font-size: 0.7em;
+        }
+
+        .person-name {
+            background: linear-gradient(135deg, rgba(0,212,255,0.3), rgba(0,212,255,0.1));
+            padding: 6px 4px;
+            font-weight: 900;
+            color: #00ffff;
+            text-align: left;
+            border-radius: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            grid-column: 1;
+            display: flex;
+            align-items: center;
+            text-shadow: 0 0 12px rgba(0,212,255,0.8), 0 0 6px rgba(0,255,255,0.6);
+            font-size: 0.85em;
+        }
+
+        .date-header {
+            background: rgba(0,255,127,0.15);
+            padding: 4px 2px;
+            text-align: center;
+            font-weight: 900;
+            color: #00ff88;
+            font-size: 0.7em;
+            border-radius: 3px;
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 25px;
+            text-shadow: 0 0 10px rgba(0,255,127,0.8);
+        }
+
+        .shift-cell {
+            padding: 3px 2px;
+            text-align: center;
+            border-radius: 3px;
+            font-size: 0.7em;
+            min-height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            word-break: break-word;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 700;
+        }
+
+        .shift-cell:hover { 
+            box-shadow: 0 0 12px rgba(0,212,255,0.8), inset 0 0 5px rgba(255,255,255,0.1);
+            transform: scale(1.08);
+            z-index: 10;
+        }
+
+        .morning { background: rgba(255,200,0,0.35); color: #ffff00; border: 2px solid rgba(255,255,0,0.6); text-shadow: 0 0 6px rgba(255,255,0,0.8); }
+        .noon { background: rgba(255,100,50,0.35); color: #ff6666; border: 2px solid rgba(255,100,50,0.6); text-shadow: 0 0 6px rgba(255,100,50,0.8); }
+        .evening { background: rgba(100,200,255,0.35); color: #66ffff; border: 2px solid rgba(100,200,255,0.6); text-shadow: 0 0 6px rgba(100,200,255,0.8); }
+        .night { background: rgba(150,100,255,0.35); color: #ff66ff; border: 2px solid rgba(150,100,255,0.6); text-shadow: 0 0 6px rgba(150,100,255,0.8); }
+        .day-shift { background: rgba(255,215,0,0.4); color: #ffff00; border: 2px solid rgba(255,255,0,0.8); font-weight: 900; text-shadow: 0 0 8px rgba(255,255,0,0.9); }
+        .night-shift { background: rgba(100,150,255,0.4); color: #66ffff; border: 2px solid rgba(100,200,255,0.8); font-weight: 900; text-shadow: 0 0 8px rgba(100,200,255,0.9); }
+        .off { background: rgba(100,100,100,0.25); color: #cccccc; text-shadow: 0 0 4px rgba(200,200,200,0.6); }
+
+        .weekend { background: rgba(255,69,0,0.12); }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+            gap: 6px;
+            margin-top: 6px;
+            flex-shrink: 0;
+            font-size: 0.8em;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, rgba(0,212,255,0.2), rgba(0,255,127,0.15));
+            border: 2px solid rgba(0,212,255,0.6);
+            padding: 8px 6px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-num { 
+            color: #ffff00; 
+            font-weight: 900; 
+            font-size: 1.3em; 
+            text-shadow: 0 0 12px rgba(255,255,0,0.8), 0 0 6px rgba(0,212,255,0.8);
+            display: block;
+            line-height: 1.2;
+        }
+        .stat-label { 
+            color: #00ffff; 
+            font-size: 0.75em; 
+            margin-top: 4px; 
+            font-weight: 700;
+            text-shadow: 0 0 8px rgba(0,212,255,0.6);
+        }
+
+        .legend {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 6px;
+            margin-top: 6px;
+            flex-shrink: 0;
+            font-size: 0.75em;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(0,0,0,0.3);
+            padding: 6px 8px;
+            border-radius: 6px;
+            border-left: 3px solid;
+        }
+        .legend-box {
+            width: 14px;
+            height: 14px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+        .legend-text {
+            color: #ffffff;
+            font-weight: 700;
+            text-shadow: 0 0 6px rgba(255,255,255,0.5);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        .modal.show { display: flex; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+            border: 2px solid rgba(0,212,255,0.6);
+            border-radius: 15px;
+            padding: 25px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 0 40px rgba(0,212,255,0.8), inset 0 0 20px rgba(0,255,127,0.1);
+            animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .modal-title {
+            font-size: 2em;
+            color: #00d4ff;
+            text-shadow: 0 0 20px rgba(0,212,255,0.8);
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .modal-3d {
+            font-size: 3.5em;
+            display: inline-block;
+            text-shadow: 3px 3px 0px #00ff88, 6px 6px 0px #00d4ff, 9px 9px 20px rgba(0,212,255,0.5);
+            transform: perspective(600px) rotateX(5deg) rotateY(-5deg);
+            margin: 10px 0;
+        }
+
+        .modal-details {
+            background: rgba(0,0,0,0.4);
+            border-left: 3px solid #00ff88;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(0,212,255,0.2);
+        }
+        .detail-label { color: #00ff88; font-weight: bold; }
+        .detail-value { color: #ffc800; font-weight: 600; }
+
+        .shift-type-box {
+            background: linear-gradient(135deg, rgba(0,255,127,0.2), rgba(0,212,255,0.1));
+            border: 2px solid rgba(0,255,127,0.6);
+            padding: 12px;
+            margin: 15px 0;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .shift-type-label {
+            color: #00ff88;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .shift-type-name {
+            font-size: 1.8em;
+            color: #ffff00;
+            font-weight: 900;
+            text-shadow: 0 0 12px rgba(255,255,0,0.8), 0 0 6px rgba(0,212,255,0.8);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .modal-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .modal-btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            font-size: 0.9em;
+        }
+        .modal-btn-update {
+            background: linear-gradient(135deg, #00d4ff, #00ff88);
+            color: #000;
+            box-shadow: 0 0 15px rgba(0,212,255,0.6);
+        }
+        .modal-btn-update:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(0,212,255,0.8);
+        }
+        .modal-btn-close {
+            background: rgba(100,100,100,0.3);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        .modal-btn-close:hover {
+            background: rgba(100,100,100,0.5);
+        }
+
+        .shift-selector {
+            background: rgba(0,212,255,0.1);
+            border: 1px solid rgba(0,212,255,0.4);
+            color: #00d4ff;
+            padding: 8px;
+            border-radius: 6px;
+            margin: 10px 0;
+            width: 100%;
+            font-weight: 600;
+        }
+
+        @media (max-width: 1920px) {
+            .schedule-grid { grid-template-columns: 65px repeat(31, 1fr); }
+            .shift-cell { font-size: 0.65em; }
+            .date-header { font-size: 0.65em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="header">
+            <h1>🖧 Network Team Shift scheduled-ASO</h1>
+            <div class="subtitle">Real-Time Shift Management • January 2026 • IST Timezone</div>
+        </div>
+
+        <div class="controls">
+            <input type="text" id="searchInput" class="search-box" placeholder="🔍 Search: Name / Day / Date / Time...">
+            <button class="filter-btn active" onclick="filterShifts('all')">📅 All</button>
+            <button class="filter-btn" onclick="filterShifts('weekday')">📍 Weekdays</button>
+            <button class="filter-btn" onclick="filterShifts('weekend')">🔴 Weekends</button>
+        </div>
+
+        <div class="main-container">
+            <div class="schedule-grid" id="scheduleGrid"></div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <span class="stat-num" id="totalShifts">162</span>
+                <span class="stat-label">Total Shifts</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-num" id="teamCount">11</span>
+                <span class="stat-label">Team Members</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-num" id="daysCount">31</span>
+                <span class="stat-label">Days Covered</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-num" id="avgShifts">14.7</span>
+                <span class="stat-label">Avg Shifts/Person</span>
+            </div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item" style="border-left-color: #ffc800;">
+                <div class="legend-box morning"></div>
+                <span class="legend-text">6:30 AM-4:30 PM (Morning)</span>
+            </div>
+            <div class="legend-item" style="border-left-color: #ff6432;">
+                <div class="legend-box noon"></div>
+                <span class="legend-text">1:00 PM-10:00 PM (Noon)</span>
+            </div>
+            <div class="legend-item" style="border-left-color: #64c8ff;">
+                <div class="legend-box evening"></div>
+                <span class="legend-text">4:00 PM-1:00 AM (Evening)</span>
+            </div>
+            <div class="legend-item" style="border-left-color: #9664ff;">
+                <div class="legend-box night"></div>
+                <span class="legend-text">6:00 PM-3:00 AM (Night)</span>
+            </div>
+            <div class="legend-item" style="border-left-color: #9664ff;">
+                <div class="legend-box night"></div>
+                <span class="legend-text">10:00 PM-6:30 AM (Night)</span>
+            </div>
+            <div class="legend-item" style="border-left-color: #ffd700;">
+                <div class="legend-box day-shift"></div>
+                <span class="legend-text">5:30 AM-5:30 PM (Sat/Sun)</span>
+            </div>
+            <div class="legend-item" style="border-left-color: #6496ff;">
+                <div class="legend-box night-shift"></div>
+                <span class="legend-text">5:30 PM-5:30 AM (Sat/Sun)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="shiftModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-3d" id="modalEmoji">⏰</div>
+                <div class="modal-title" id="modalTitle">Shift Details</div>
+            </div>
+            <div class="modal-details">
+                <div class="detail-row">
+                    <span class="detail-label">👤 Person:</span>
+                    <span class="detail-value" id="modalPerson">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">📅 Date:</span>
+                    <span class="detail-value" id="modalDate">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">📍 Day:</span>
+                    <span class="detail-value" id="modalDay">-</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">⏰ IST Time:</span>
+                    <span class="detail-value" id="modalTime">-</span>
+                </div>
+            </div>
+
+            <div class="shift-type-box">
+                <div class="shift-type-label">📊 Shift Type</div>
+                <div class="shift-type-name" id="modalShiftType">-</div>
+            </div>
+
+            <div style="background: rgba(0,255,127,0.1); border-left: 3px solid #00ff88; padding: 12px; margin: 15px 0; border-radius: 8px;">
+                <div style="color: #00ff88; font-weight: bold; margin-bottom: 8px;">⚡ Update Shift Status</div>
+                <select class="shift-selector" id="updateShiftSelect">
+                    <option value="">-- Select New Status --</option>
+                    <option value="6:30 AM">MORNING - 6:30 AM (6:30 AM-4:30 PM)</option>
+                    <option value="1:00 PM">NOON - 1:00 PM (1:00 PM-10:00 PM)</option>
+                    <option value="4:00 PM">EVENING - 4:00 PM (4:00 PM-1:00 AM)</option>
+                    <option value="6:00 PM">NIGHT - 6:00 PM (6:00 PM-3:00 AM)</option>
+                    <option value="10:00 PM">NIGHT - 10:00 PM (10:00 PM-6:30 AM)</option>
+                    <option value="8:30 PM">NIGHT - 8:30 PM</option>
+                    <option value="6:30 PM">NIGHT - 6:30 PM</option>
+                    <option value="5:30 AM-5:30 PM">DAY SHIFT - 5:30 AM-5:30 PM (Sat/Sun)</option>
+                    <option value="5:30 PM-5:30 AM">NIGHT SHIFT - 5:30 PM-5:30 AM (Sat/Sun)</option>
+                    <option value="LEAVE">🚫 LEAVE (OFF)</option>
+                </select>
+            </div>
+
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-update" onclick="updateShift()">✅ Update & Notify Team</button>
+                <button class="modal-btn modal-btn-close" onclick="closeModal()">❌ Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const people = ["Abhi", "Arul", "Abhishek Das", "Chethan", "Chetan A", "Jithin", "Pankaj", "Prajyot", "Sabari", "Sankar", "Syed"];
+
+        const schedule = {
+            "01-Jan": { "Sankar": "6:30 AM", "Prajyot": "1:00 PM", "Sabari": "4:00 PM", "Arul": "4:00 PM", "Syed": "10:00 PM", "Abhi": "6:30 PM", "Jithin": "8:30 PM", "Chethan": "6:00 PM", "Abhishek Das": "4:00 PM", "Chetan A": "1:00 PM", "Pankaj": "4:00 PM" },
+            "02-Jan": { "Sankar": "6:30 AM", "Prajyot": "1:00 PM", "Sabari": "4:00 PM", "Arul": "4:00 PM", "Syed": "10:00 PM", "Abhi": "6:30 PM", "Jithin": "8:30 PM", "Chethan": "6:00 PM", "Abhishek Das": "4:00 PM", "Chetan A": "1:00 PM", "Pankaj": "4:00 PM" },
+            "03-Jan": { "Arul": "5:30 PM-5:30 AM", "Chetan A": "5:30 AM-5:30 PM" },
+            "04-Jan": { "Arul": "5:30 PM-5:30 AM", "Chetan A": "5:30 AM-5:30 PM" },
+            "05-Jan": { "Pankaj": "6:30 AM", "Abhishek Das": "1:00 PM", "Sabari": "4:00 PM", "Sankar": "4:00 PM", "Arul": "10:00 PM", "Abhi": "6:30 PM", "Jithin": "8:30 PM", "Chetan A": "6:00 PM", "Prajyot": "4:00 PM", "Syed": "4:00 PM", "Chethan": "1:00 PM" },
+            "06-Jan": { "Pankaj": "6:30 AM", "Abhishek Das": "1:00 PM", "Sabari": "4:00 PM", "Sankar": "4:00 PM", "Arul": "10:00 PM", "Abhi": "6:30 PM", "Jithin": "8:30 PM", "Chetan A": "6:00 PM", "Prajyot": "4:00 PM", "Syed": "4:00 PM", "Chethan": "1:00 PM" },
+            "07-Jan": { "Pankaj": "6:30 AM", "Abhishek Das": "1:00 PM", "Sabari": "4:00 PM", "Sankar": "4:00 PM", "Arul": "10:00 PM", "Abhi": "6:30 PM", "Jithin": "8:30 PM", "Chetan A": "6:00 PM", "Prajyot": "4:00 PM", "Syed": "4:00 PM", "Chethan": "1:00 PM" },
+            "08-Jan": { "Pankaj": "6:30 AM", "Abhishek Das": "1:00 PM", "Sabari": "4:00 PM", "Sankar": "4:00 PM", "Arul": "10:00 PM", "Abhi": "6:30 PM", "Jithin": "8:30 PM", "Chetan A": "6:00 PM", "Prajyot": "4:00 PM", "Syed": "4:00 PM", "Chethan": "1:00 PM" },
+            "09-Jan": { "Pankaj": "6:30 AM", "Abhishek Das": "1:00 PM", "Sabari": "4:00 PM", "Sankar": "4:00 PM", "Arul": "10:00 PM", "Abhi": "6:30 PM", "Jithin": "8:30 PM", "Chetan A": "6:00 PM", "Prajyot": "4:00 PM", "Syed": "4:00 PM", "Chethan": "1:00 PM" },
+            "10-Jan": { "Syed": "5:30 PM-5:30 AM", "Sabari": "5:30 AM-5:30 PM" },
+            "11-Jan": { "Syed": "5:30 PM-5:30 AM", "Sabari": "5:30 AM-5:30 PM" },
+            "12-Jan": { "Chethan": "6:30 AM", "Abhishek Das": "1:00 PM", "Sabari": "4:00 PM", "Sankar": "4:00 PM", "Prajyot": "10:00 PM", "Abhi": "6:30 PM", "Jithin": "8:30 PM", "Syed": "6:00 PM", "Arul": "4:00 PM", "Chetan A": "4:00 PM" },
+            "13-Jan": { "Chethan": "6:30 AM", "Abhishek Das": "1:00 PM", "Sabari": "4:00 PM", "Sankar": "4:00 PM", "Prajyot": "10:00 PM", "Abhi": "6:30 PM", "Jithin": "8:30 PM", "Syed": "6:00 PM", "Arul": "4:00 PM", "Chetan A": "4:00 PM", "Pankaj": "LEAVE" },
+            "14-Jan": { "Chethan": "6:30 AM", "Abhishek Das": "1:00 PM", "Sabari": "4:00 PM", "Sankar": "4:00 PM", "Prajyot": "10:00 PM", "Abhi": "6:30 PM", "Jithin": "8:30 PM", "Syed": "6:00 PM", "Arul": "4:00 PM", "Chetan A": "4:00 PM" },
+            "15-Jan": { "Chethan": "6:30 AM", "Abhishek Das": "1:00 PM", "Sabari": "4:00 PM", "Sankar": "4:00 PM", "Prajyot": "10:00 PM", "Abhi": "6:30 PM", "Jithin": "8:30 PM", "Syed": "6:00 PM", "Arul": "4:00 PM", "Chetan A": "4:00 PM" },
+            "16-Jan": { "Chethan": "6:30 AM", "Abhishek Das": "1:00 PM", "Sabari": "4:00 PM", "Sankar": "4:00 PM", "Prajyot": "10:00 PM", "Abhi": "6:30 PM", "Jithin": "8:30 PM", "Syed": "6:00 PM", "Arul": "4:00 PM", "Chetan A": "4:00 PM" },
+            "17-Jan": { "Chethan": "5:30 PM-5:30 AM", "Pankaj": "5:30 AM-5:30 PM" },
+            "18-Jan": { "Chethan": "5:30 PM-5:30 AM", "Pankaj": "5:30 AM-5:30 PM" },
+            "19-Jan": { "Prajyot": "6:30 AM", "Arul": "1:00 PM", "Sabari": "4:00 PM", "Chethan": "4:00 PM", "Sankar": "10:00 PM", "Abhi": "6:30 PM", "Jithin": "8:30 PM", "Syed": "6:00 PM", "Abhishek Das": "4:00 PM", "Chetan A": "4:00 PM" },
+            "20-Jan": { "Prajyot": "6:30 AM", "Arul": "1:00 PM", "Sabari": "4:00 PM", "Chethan": "4:00 PM", "Sankar": "10:00 PM", "Abhi": "6:30 PM", "Jithin": "8:30 PM", "Syed": "6:00 PM", "Abhishek Das": "4:00 PM", "Chetan A": "4:00 PM" },
+            "21-Jan": { "Prajyot": "6:30 AM", "Arul": "1:00 PM", "Sabari": "4:00 PM", "Chethan": "4:00 PM", "Sankar": "10:00 PM", "Abhi": "6:30 PM", "Jithin": "8:30 PM", "Syed": "6:00 PM", "Abhishek Das": "4:00 PM", "Chetan A": "4:00 PM" },
+            "22-Jan": { "Prajyot": "6:30 AM", "Arul": "1:00 PM", "Sabari": "4:00 PM", "Chethan": "4:00 PM", "Sankar": "10:00 PM", "Abhi": "6:30 PM", "Jithin": "8:30 PM", "Syed": "6:00 PM", "Abhishek Das": "4:00 PM", "Chetan A": "4:00 PM" },
+            "23-Jan": { "Prajyot": "6:30 AM", "Arul": "1:00 PM", "Sabari": "4:00 PM", "Chethan": "4:00 PM", "Sankar": "10:00 PM", "Abhi": "6:30 PM", "Jithin": "8:30 PM", "Syed": "6:00 PM", "Abhishek Das": "4:00 PM", "Chetan A": "4:00 PM" },
+            "24-Jan": { "Prajyot": "5:30 PM-5:30 AM", "Arul": "5:30 AM-5:30 PM" },
+            "25-Jan": { "Prajyot": "5:30 PM-5:30 AM", "Arul": "5:30 AM-5:30 PM" },
+            "26-Jan": { "Syed": "6:30 AM", "Abhishek Das": "1:00 PM", "Sabari": "4:00 PM", "Arul": "4:00 PM", "Chetan A": "10:00 PM", "Abhi": "6:30 PM", "Jithin": "8:30 PM", "Sankar": "6:00 PM", "Prajyot": "4:00 PM", "Chethan": "4:00 PM" },
+            "27-Jan": { "Syed": "6:30 AM", "Abhishek Das": "1:00 PM", "Sabari": "4:00 PM", "Arul": "4:00 PM", "Chetan A": "10:00 PM", "Abhi": "6:30 PM", "Jithin": "8:30 PM", "Sankar": "6:00 PM", "Prajyot": "4:00 PM", "Chethan": "4:00 PM" },
+            "28-Jan": { "Syed": "6:30 AM", "Abhishek Das": "1:00 PM", "Sabari": "4:00 PM", "Arul": "4:00 PM", "Chetan A": "10:00 PM", "Abhi": "6:30 PM", "Jithin": "8:30 PM", "Sankar": "6:00 PM", "Prajyot": "4:00 PM", "Chethan": "4:00 PM" },
+            "29-Jan": { "Syed": "6:30 AM", "Abhishek Das": "1:00 PM", "Sabari": "4:00 PM", "Arul": "4:00 PM", "Chetan A": "10:00 PM", "Abhi": "6:30 PM", "Jithin": "8:30 PM", "Sankar": "6:00 PM", "Prajyot": "4:00 PM", "Chethan": "4:00 PM" },
+            "30-Jan": { "Syed": "6:30 AM", "Abhishek Das": "1:00 PM", "Sabari": "4:00 PM", "Arul": "4:00 PM", "Chetan A": "10:00 PM", "Abhi": "6:30 PM", "Jithin": "8:30 PM", "Sankar": "6:00 PM", "Prajyot": "4:00 PM", "Chethan": "4:00 PM" },
+            "31-Jan": { "Sankar": "5:30 PM-5:30 AM", "Syed": "5:30 AM-5:30 PM" }
+        };
+
+        const shiftTypeNames = {
+            "6:30 AM": "MORNING",
+            "1:00 PM": "NOON",
+            "4:00 PM": "EVENING",
+            "6:00 PM": "NIGHT",
+            "10:00 PM": "NIGHT",
+            "8:30 PM": "NIGHT",
+            "6:30 PM": "NIGHT",
+            "5:30 AM-5:30 PM": "DAY SHIFT",
+            "5:30 PM-5:30 AM": "NIGHT SHIFT",
+            "LEAVE": "OFF"
+        };
+
+        const weekends = ["03-Jan", "04-Jan", "10-Jan", "11-Jan", "17-Jan", "18-Jan", "24-Jan", "25-Jan", "31-Jan"];
+        let currentFilter = 'all';
+        let selectedCell = null;
+
+        function getShiftType(time) {
+            if (!time || time === "LEAVE") return "off";
+            if (time === "6:30 AM") return "morning";
+            if (time === "1:00 PM") return "noon";
+            if (time === "4:00 PM") return "evening";
+            if (time === "6:00 PM" || time === "10:00 PM" || time === "8:30 PM" || time === "6:30 PM") return "night";
+            if (time === "5:30 AM-5:30 PM") return "day-shift";
+            if (time === "5:30 PM-5:30 AM") return "night-shift";
+            return "off";
+        }
+
+        function buildGrid() {
+            const grid = document.getElementById('scheduleGrid');
+            grid.innerHTML = '';
+            const emptyHeader = document.createElement('div');
+            grid.appendChild(emptyHeader);
+
+            for (let day = 1; day <= 31; day++) {
+                const dateStr = String(day).padStart(2, '0');
+                const dateKey = `${dateStr}-Jan`;
+                const dayNum = new Date(2026, 0, day).getDay();
+                const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                const header = document.createElement('div');
+                header.className = `date-header ${weekends.includes(dateKey) ? 'weekend' : ''}`;
+                header.textContent = `${dateStr}\n${dayNames[dayNum]}`;
+                grid.appendChild(header);
+            }
+
+            people.forEach(person => {
+                const nameCell = document.createElement('div');
+                nameCell.className = 'person-name';
+                nameCell.textContent = person;
+                grid.appendChild(nameCell);
+
+                for (let day = 1; day <= 31; day++) {
+                    const dateStr = String(day).padStart(2, '0');
+                    const dateKey = `${dateStr}-Jan`;
+                    const isWeekend = weekends.includes(dateKey);
+                    const cell = document.createElement('div');
+                    cell.className = `shift-cell ${isWeekend ? 'weekend' : ''}`;
+                    const time = schedule[dateKey]?.[person];
+                    const shiftType = getShiftType(time);
+                    cell.classList.add(shiftType);
+                    cell.textContent = time || '';
+                    cell.dataset.person = person;
+                    cell.dataset.date = dateKey;
+                    cell.dataset.day = new Date(2026, 0, day).toLocaleDateString('en-US', {weekday: 'long'});
+                    cell.dataset.time = time || 'OFF';
+                    cell.onclick = () => openModal(person, dateKey, cell.dataset.day, time);
+                    grid.appendChild(cell);
+                }
+            });
+        }
+
+        function openModal(person, date, day, time) {
+            document.getElementById('modalPerson').textContent = person;
+            document.getElementById('modalDate').textContent = date;
+            document.getElementById('modalDay').textContent = day;
+            document.getElementById('modalTime').textContent = time || 'OFF';
+            const shiftTypeName = shiftTypeNames[time] || 'OFF';
+            document.getElementById('modalShiftType').textContent = shiftTypeName;
+            document.getElementById('shiftModal').classList.add('show');
+            selectedCell = { person, date, day, time };
+        }
+
+        function closeModal() {
+            document.getElementById('shiftModal').classList.remove('show');
+            selectedCell = null;
+        }
+
+        function updateShift() {
+            const newStatus = document.getElementById('updateShiftSelect').value;
+            if (!newStatus || !selectedCell) return;
+            
+            schedule[selectedCell.date][selectedCell.person] = newStatus === 'LEAVE' ? 'LEAVE' : newStatus;
+            buildGrid();
+            closeModal();
+            alert(`✅ Shift Updated!\n\n${selectedCell.person}\n${selectedCell.date}\n${selectedCell.day}\nNew Status: ${newStatus}\n\n🔔 All team members notified!`);
+        }
+
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            document.querySelectorAll('.shift-cell').forEach(cell => {
+                const match = cell.dataset.person.toLowerCase().includes(term) ||
+                             cell.dataset.date.toLowerCase().includes(term) ||
+                             cell.dataset.day.toLowerCase().includes(term) ||
+                             cell.dataset.time.toLowerCase().includes(term);
+                cell.style.opacity = match ? '1' : '0.2';
+            });
+        });
+
+        function filterShifts(type) {
+            currentFilter = type;
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            document.querySelectorAll('.shift-cell').forEach(cell => {
+                if (type === 'all') {
+                    cell.style.opacity = '1';
+                } else if (type === 'weekday' && cell.classList.contains('weekend')) {
+                    cell.style.opacity = '0.2';
+                } else if (type === 'weekend' && !cell.classList.contains('weekend')) {
+                    cell.style.opacity = '0.2';
+                } else {
+                    cell.style.opacity = '1';
+                }
+            });
+        }
+
+        document.getElementById('shiftModal').addEventListener('click', (e) => {
+            if (e.target.id === 'shiftModal') closeModal();
+        });
+
+        window.addEventListener('DOMContentLoaded', buildGrid);
+    </script>
+</body>
+</html>
